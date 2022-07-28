@@ -1,0 +1,58 @@
+#!/usr/bin/env python2
+
+'''
+separateR1R2.py
+
+This code sorts combined R1 and R2 fastq reads into separate files based on their headers.
+
+R1 headers look like
+@A00127:195:H523HDSXY:1:1101:12382:1736 1:N:0:GAATTCGT+ATAGAGGC
+
+R2 headers look like
+@A00127:195:H523HDSXY:1:1101:12382:1736 2:N:0:GAATTCGT+ATAGAGGC
+'''
+
+import sys
+
+def find_between(s, first, last ):
+    try:
+        start = s.rindex( first ) + len( first )
+        end = s.rindex( last, start )
+        return s[start:end]
+    except ValueError:
+        return ""
+
+def sort(inputfastq, outputR1, outputR2):
+    R1counter = 0
+    R2counter = 0
+
+    with open(inputfastq, 'r') as inputfile:
+        for line in inputfile:
+            if line.startswith('@A'):
+                header = find_between(line, "@", ":N:")
+                value = int(header[-1])
+                if value == 1:
+                    R1counter = R1counter + 1
+                    with open(outputR1, "a") as fh:
+                        fh.write(line)
+                        fh.write(next(inputfile))
+                        fh.write(next(inputfile))
+                        fh.write(next(inputfile))
+
+                if value == 2:
+                    R2counter = R2counter + 1
+                    with open(outputR2, "a") as fh:
+                        fh.write(line)
+                        fh.write(next(inputfile))
+                        fh.write(next(inputfile))
+                        fh.write(next(inputfile))
+
+    print("%d R1 reads" %(R1counter))
+    print("%d R2 reads" %(R2counter))
+
+if __name__ == '__main__':
+    if len(sys.argv) == 4:
+        sort(sys.argv[1], sys.argv[2], sys.argv[3])
+    else:
+        print("Usage: input.fatq, outputR1.fastq, outputR2.fastq ")
+        sys.exit(0)
